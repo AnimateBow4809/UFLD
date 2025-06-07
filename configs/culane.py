@@ -1,6 +1,6 @@
 # DATA
 dataset='CULane'
-data_root = None
+data_root = 'data_dump/culane'
 
 # TRAIN
 epoch = 50
@@ -28,14 +28,14 @@ shp_loss_w = 0.0
 # EXP
 note = ''
 
-log_path = None
+log_path = 'log_dump'
 
 # FINETUNE or RESUME MODEL PATH
 finetune = None
 resume = None
 
 # TEST
-test_model = None
+test_model = "model_dump/model_fixed.pth"
 test_work_dir = None
 
 num_lanes = 4

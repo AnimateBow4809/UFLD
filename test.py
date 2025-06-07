@@ -29,15 +29,15 @@ if __name__ == "__main__":
     net = parsingNet(pretrained = False, backbone=cfg.backbone,cls_dim = (cfg.griding_num+1,cls_num_per_lane, cfg.num_lanes),
                     use_aux=False).cuda() # we dont need auxiliary segmentation in testing
 
-    state_dict = torch.load(cfg.test_model, map_location = 'cpu')['model']
-    compatible_state_dict = {}
-    for k, v in state_dict.items():
-        if 'module.' in k:
-            compatible_state_dict[k[7:]] = v
-        else:
-            compatible_state_dict[k] = v
+    state_dict = torch.load(cfg.test_model, map_location = 'cpu')
+    # compatible_state_dict = {}
+    # for k, v in state_dict.items():
+    #     if 'module.' in k:
+    #         compatible_state_dict[k[7:]] = v
+    #     else:
+    #         compatible_state_dict[k] = v
 
-    net.load_state_dict(compatible_state_dict, strict = False)
+    net.load_state_dict(state_dict, strict = False)
 
     if distributed:
         net = torch.nn.parallel.DistributedDataParallel(net, device_ids = [args.local_rank])
