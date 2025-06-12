@@ -1,6 +1,7 @@
 import torch,pdb
 import torchvision
 import torch.nn.modules
+import torch.nn as nn
 
 class vgg16bn(torch.nn.Module):
     def __init__(self,pretrained = False):
@@ -11,46 +12,86 @@ class vgg16bn(torch.nn.Module):
         
     def forward(self,x):
         return self.model(x)
-class resnet(torch.nn.Module):
-    def __init__(self,layers,pretrained = False):
-        super(resnet,self).__init__()
-        if layers == '18':
-            model = torchvision.models.resnet18(pretrained=pretrained)
-        elif layers == '34':
-            model = torchvision.models.resnet34(pretrained=pretrained)
-        elif layers == '50':
-            model = torchvision.models.resnet50(pretrained=pretrained)
-        elif layers == '101':
-            model = torchvision.models.resnet101(pretrained=pretrained)
-        elif layers == '152':
-            model = torchvision.models.resnet152(pretrained=pretrained)
-        elif layers == '50next':
-            model = torchvision.models.resnext50_32x4d(pretrained=pretrained)
-        elif layers == '101next':
-            model = torchvision.models.resnext101_32x8d(pretrained=pretrained)
-        elif layers == '50wide':
-            model = torchvision.models.wide_resnet50_2(pretrained=pretrained)
-        elif layers == '101wide':
-            model = torchvision.models.wide_resnet101_2(pretrained=pretrained)
-        else:
-            raise NotImplementedError
+
+
+class QuantDequantLayer(nn.Module):
+    def __init__(self, bitwidth=8):
+        super().__init__()
+        assert bitwidth in [8, 16], "Only int8 or int16 are supported"
+        self.bitwidth = bitwidth
+
+    def forward(self, x):
+        if self.bitwidth == 8:
+            qmin, qmax = -128, 127
+            dtype = torch.int8
+        elif self.bitwidth == 16:
+            qmin, qmax = -32768, 32767
+            dtype = torch.int16
+
+        min_val = x.min()
+        max_val = x.max()
         
-        self.conv1 = model.conv1
-        self.bn1 = model.bn1
+        # Asymmetric scale and zero-point
+        scale = (max_val - min_val) / float(qmax - qmin)
+        zero_point = qmin - (min_val / scale)
+        zero_point = int(round(zero_point))
+        zero_point = max(qmin, min(qmax, zero_point))  # clamp helpful for instances where range is [2,10] and 0 isnt there
+
+
+        # Quantize
+        qx = torch.clamp((x / scale).round() + zero_point, qmin, qmax).to(dtype)
+
+        # Dequantize
+        x_dequant = (qx.to(torch.float32) - zero_point) * scale
+
+        return x_dequant
+
+
+
+# Fixed-point quantization module
+class Quantize(nn.Module):
+    def __init__(self, IWL=4, FWL=4):
+        super().__init__()
+        self.scale = 2 ** FWL
+        self.max_val = (2 ** IWL) - (1 / self.scale)
+        self.min_val = - (2 ** (IWL - 1))  # Change to 0 if unsigned
+        self.IWL = IWL
+        self.FWL = FWL
+
+    def forward(self, x):
+        x = torch.clamp(x, self.min_val, self.max_val)
+        return torch.floor(x * self.scale + 0.5) / self.scale
+
+
+class resnet(nn.Module):
+    def __init__(self, layers, pretrained=False):
+        super(resnet, self).__init__()
+        model = torchvision.models.resnet18(weights=pretrained)
+
+        # Add quantization module
+        # self.quant = Quantize(4, 4)
+        self.quant = QuantDequantLayer(bitwidth=8)
+
+        self.conv1 = nn.Sequential(model.conv1, self.quant)
+        self.bn1 = nn.Sequential(model.bn1, self.quant)
         self.relu = model.relu
         self.maxpool = model.maxpool
-        self.layer1 = model.layer1
-        self.layer2 = model.layer2
-        self.layer3 = model.layer3
-        self.layer4 = model.layer4
 
-    def forward(self,x):
+        # Quantize after each layer group
+        self.layer1 = nn.Sequential(model.layer1, self.quant)
+        self.layer2 = nn.Sequential(model.layer2, self.quant)
+        self.layer3 = nn.Sequential(model.layer3, self.quant)
+        self.layer4 = nn.Sequential(model.layer4, self.quant)
+
+    def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
+
         x = self.layer1(x)
         x2 = self.layer2(x)
         x3 = self.layer3(x2)
         x4 = self.layer4(x3)
-        return x2,x3,x4
+
+        return x2, x3, x4

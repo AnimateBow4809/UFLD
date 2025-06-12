@@ -1,6 +1,6 @@
 # DATA
 dataset='Tusimple'
-data_root = 'data_dump/tusimple'
+data_root = 'data_dump/TUSimple_flat'
 
 # TRAIN
 epoch = 100
