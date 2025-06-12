@@ -37,6 +37,11 @@ resume = None
 
 # TEST
 test_model = "model_dump/model_fixed.pth"
-test_work_dir = None
+test_work_dir = "test_workdir"
 
 num_lanes = 4
+
+## My CONFIGS
+FWL=4
+IWL=4
+bitWidth=8

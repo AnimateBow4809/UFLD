@@ -126,7 +126,7 @@ if __name__ == "__main__":
         for k,v in state_all.items():
             if 'model' in k:
                 state_clip[k] = v
-        net.load_state_dict(state_clip, strict=False)
+        net.load_state_dict(state_clip, strict = True)
     if cfg.resume is not None:
         dist_print('==> Resume model from ' + cfg.resume)
         resume_dict = torch.load(cfg.resume, map_location='cpu')

@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 import data.mytransforms as mytransforms
 from data.constant import tusimple_row_anchor, culane_row_anchor
 from data.dataset import LaneClsDataset, LaneTestDataset
-from fixedPointRounding import FixedPointQuantize
+from fixedPointRounding.FixedPointQuantize import FixedPointQuantize
 
 def get_train_loader(batch_size, data_root, griding_num, dataset, use_aux, distributed, num_lanes):
     target_transform = transforms.Compose([
@@ -57,12 +57,12 @@ def get_train_loader(batch_size, data_root, griding_num, dataset, use_aux, distr
 
     return train_loader, cls_num_per_lane
 
-def get_test_loader(batch_size, data_root,dataset, distributed):
+def get_test_loader(batch_size, data_root,dataset, distributed,cfg):
     img_transforms = transforms.Compose([
         transforms.Resize((288, 800)),
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        FixedPointQuantize(IWL=4,FWL=4)
+        FixedPointQuantize(IWL=cfg.IWL,FWL=cfg.FWL)
     ])
     if dataset == 'CULane':
         test_dataset = LaneTestDataset(data_root,os.path.join(data_root, 'list/test.txt'),img_transform = img_transforms)

@@ -27,9 +27,9 @@ if __name__ == "__main__":
         raise NotImplementedError
 
     net = parsingNet(pretrained = False, backbone=cfg.backbone,cls_dim = (cfg.griding_num+1,cls_num_per_lane, cfg.num_lanes),
-                    use_aux=False).cuda() # we dont need auxiliary segmentation in testing
+                    use_aux=False,bitwidth=cfg.bitwidth).cuda() # we dont need auxiliary segmentation in testing
 
-    state_dict = torch.load(cfg.test_model, map_location = 'cpu')
+    state_dict = torch.load(cfg.test_model, map_location = 'cuda')
     # compatible_state_dict = {}
     # for k, v in state_dict.items():
     #     if 'module.' in k:
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     #     else:
     #         compatible_state_dict[k] = v
 
-    net.load_state_dict(state_dict, strict = False)
+    net.load_state_dict(state_dict, strict = True)
 
     if distributed:
         net = torch.nn.parallel.DistributedDataParallel(net, device_ids = [args.local_rank])
@@ -45,4 +45,8 @@ if __name__ == "__main__":
     if not os.path.exists(cfg.test_work_dir):
         os.mkdir(cfg.test_work_dir)
 
-    eval_lane(net, cfg.dataset, cfg.data_root, cfg.test_work_dir, cfg.griding_num, False, distributed)
+    print("\033c", end="")  # This clears the entire terminal screen
+    print(f"Bitwidth={cfg.bitwidth}")
+    print(f"IWL={cfg.IWL}")
+    print(f"FWL={cfg.FWL}")
+    eval_lane(net, cfg.dataset, cfg.data_root, cfg.test_work_dir, cfg.griding_num, False, distributed,cfg=cfg)

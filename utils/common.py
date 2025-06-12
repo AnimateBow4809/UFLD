@@ -18,7 +18,6 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('config', help = 'path to config file')
     parser.add_argument('--local_rank', type=int, default=0)
-
     parser.add_argument('--dataset', default = None, type = str)
     parser.add_argument('--data_root', default = None, type = str)
     parser.add_argument('--epoch', default = None, type = int)
@@ -46,6 +45,11 @@ def get_args():
     parser.add_argument('--num_lanes', default = None, type = int)
     parser.add_argument('--auto_backup', action='store_true', help='automatically backup current code in the log path')
 
+    parser.add_argument('--FWL', type=int, default=None)
+    parser.add_argument('--IWL', type=int, default=None)
+    parser.add_argument('--bitwidth', type=int, default=None)
+
+
     return parser
 
 def merge_config():
@@ -55,7 +59,7 @@ def merge_config():
     items = ['dataset','data_root','epoch','batch_size','optimizer','learning_rate',
     'weight_decay','momentum','scheduler','steps','gamma','warmup','warmup_iters',
     'use_aux','griding_num','backbone','sim_loss_w','shp_loss_w','note','log_path',
-    'finetune','resume', 'test_model','test_work_dir', 'num_lanes']
+    'finetune','resume', 'test_model','test_work_dir', 'num_lanes',     'FWL','IWL','bitwidth']
     for item in items:
         if getattr(args, item) is not None:
             dist_print('merge ', item, ' config')

@@ -16,7 +16,7 @@ class conv_bn_relu(torch.nn.Module):
         x = self.relu(x)
         return x
 class parsingNet(torch.nn.Module):
-    def __init__(self, size=(288, 800), pretrained=True, backbone='50', cls_dim=(37, 10, 4), use_aux=False):
+    def __init__(self, size=(288, 800), pretrained=True, backbone='50', cls_dim=(37, 10, 4), use_aux=False,bitwidth=8):
         super(parsingNet, self).__init__()
 
         self.size = size
@@ -29,7 +29,8 @@ class parsingNet(torch.nn.Module):
 
         # input : nchw,
         # output: (w+1) * sample_rows * 4 
-        self.model = resnet(backbone, pretrained=pretrained)
+        self.bitwidth=bitwidth
+        self.model = resnet(backbone, pretrained=pretrained,bitwidth=bitwidth)
 
         if self.use_aux:
             self.aux_header2 = torch.nn.Sequential(

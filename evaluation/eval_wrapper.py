@@ -82,10 +82,10 @@ def generate_tusimple_lines(out,shape,griding_num,localization_type='rel'):
         lanes.append(lane)
     return lanes
 
-def run_test_tusimple(net,data_root,work_dir,exp_name,griding_num,use_aux, distributed,batch_size = 8):
+def run_test_tusimple(net,data_root,work_dir,exp_name,griding_num,use_aux, distributed,batch_size = 8,cfg=None):
     output_path = os.path.join(work_dir,exp_name+'.%d.txt'% get_rank())
     fp = open(output_path,'w')
-    loader = get_test_loader(batch_size,data_root,'Tusimple', distributed)
+    loader = get_test_loader(batch_size,data_root,'Tusimple', distributed,cfg=cfg)
     for i,data in enumerate(dist_tqdm(loader)):
         imgs,names = data
         imgs = imgs.cuda()
@@ -129,7 +129,7 @@ def combine_tusimple_test(work_dir,exp_name):
         fp.writelines(all_res_no_dup)
     
 
-def eval_lane(net, dataset, data_root, work_dir, griding_num, use_aux, distributed):
+def eval_lane(net, dataset, data_root, work_dir, griding_num, use_aux, distributed,cfg):
     net.eval()
     if dataset == 'CULane':
         run_test(net,data_root, 'culane_eval_tmp', work_dir, griding_num, use_aux, distributed)
@@ -152,7 +152,7 @@ def eval_lane(net, dataset, data_root, work_dir, griding_num, use_aux, distribut
 
     elif dataset == 'Tusimple':
         exp_name = 'tusimple_eval_tmp'
-        run_test_tusimple(net, data_root, work_dir, exp_name, griding_num, use_aux, distributed)
+        run_test_tusimple(net, data_root, work_dir, exp_name, griding_num, use_aux, distributed,cfg=cfg)
         synchronize()  # wait for all results
         if is_main_process():
             combine_tusimple_test(work_dir,exp_name)
