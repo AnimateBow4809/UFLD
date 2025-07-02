@@ -31,11 +31,9 @@ class Quantize(nn.Module):
 
 
 class QuantDequantLayer(nn.Module):
-    def __init__(self, bitwidth=8, do=True):
+    def __init__(self, bitwidth=8):
         super().__init__()
-        assert 1 <= bitwidth <= 32, "bitwidth must be between 1 and 32"
         self.bitwidth = bitwidth
-        self.do = do
 
         # Calculate qmin and qmax for signed integers
         self.qmin = -(2 ** (bitwidth - 1))
@@ -50,7 +48,7 @@ class QuantDequantLayer(nn.Module):
             self.dtype = torch.int32
 
     def forward(self, x):
-        if not self.do:
+        if self.bitwidth<0:
             return x
 
         min_val = x.min()
@@ -79,7 +77,7 @@ class resnet(nn.Module):
         super().__init__()
         model = torchvision.models.resnet18(weights=pretrained)
 
-        self.quant = QuantDequantLayer(bitwidth=bitwidth, do=True)
+        self.quant = QuantDequantLayer(bitwidth=bitwidth)
         self.conv1 = model.conv1
         self.bn1 = model.bn1
         self.relu = model.relu

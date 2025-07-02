@@ -14,6 +14,9 @@ class FixedPointQuantize:
         Simulates fixed-point quantization on a tensor.
         Assumes input is a float tensor in range [0, 1]
         """
+        if self.FWL<0 or self.IWL < 0:
+            return tensor
+        
         # Clamp to fixed-point range
         tensor = torch.clamp(tensor, self.min_val, self.max_val)
 

@@ -45,7 +45,6 @@ if __name__ == "__main__":
     if not os.path.exists(cfg.test_work_dir):
         os.mkdir(cfg.test_work_dir)
 
-    print("\033c", end="")  # This clears the entire terminal screen
     print(f"Bitwidth={cfg.bitwidth}")
     print(f"IWL={cfg.IWL}")
     print(f"FWL={cfg.FWL}")
